@@ -2,16 +2,25 @@
 #include "canframe.h"
 #include "socketcan.h"
 #include "canexception.h"
+#include "slot.h"
 #include <iostream>
+#include <list>
 
-int main(){
+int main(int argc, char *argv[]){
+
+    QCoreApplication a(argc, argv);
 
     SocketCAN *my_socket = new SocketCAN(8);
     CANFrame8 *my_frame = new CANFrame8();
 
+    std::list<int> my_filter = {0x001, 0x002};
+
+    Slot *my_slot = new Slot();
+    QObject::connect(my_socket, SIGNAL(CatchIt()), my_slot, SLOT(ProcessSignal()));
+
     try{
 
-        my_socket->Open("can0");
+        my_socket->Open("can0", my_filter);
 
         int my_id = 0x123;
 
@@ -34,17 +43,14 @@ int main(){
 
         std::cout << my_frame->ToString() << std::endl;
 
-        my_socket->WriteFrame(*my_frame);
+        my_socket->WriteSocket(*my_frame);
 
-        my_socket->ReadFrame(*my_frame);
-        std::cout << my_frame->ToString() << std::endl;
+        std::cout << "Waiting ..." << std::endl;
     }
     catch(CANException& e){
-
-        using namespace std;
 
         std::cout << e.Message() << std::endl;
     }
 
-    return 0;
+    return a.exec();
 }
